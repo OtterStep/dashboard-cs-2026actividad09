@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tablero Logístico - Peru Tech S.A.C.</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+        }
+        body {
+            background: #f0f4fb;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 32px;
+            padding: 28px 32px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.06);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #eef2f7;
+            padding-bottom: 16px;
+        }
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0b2b4a;
+        }
+        .header h1 i { color: #2a7de1; margin-right: 10px; }
+        .header .sub { color: #5e6f8d; font-size: 14px; }
+        .header .period { background: #eef2f7; padding: 6px 16px; border-radius: 40px; font-size: 13px; }
+
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 28px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 2px;
+            flex-wrap: wrap;
+        }
+        .tabs button {
+            background: transparent;
+            border: none;
+            padding: 12px 24px;
+            font-weight: 600;
+            font-size: 15px;
+            color: #5e6f8d;
+            cursor: pointer;
+            border-radius: 30px 30px 0 0;
+            transition: 0.2s;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+        }
+        .tabs button:hover { background: #f0f4fb; color: #0b2b4a; }
+        .tabs button.active { color: #0b2b4a; border-bottom: 3px solid #2a7de1; background: #f8faff; }
+        .tab-content { display: none; animation: fade 0.25s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fade { from { opacity: 0.4; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* TEORÍA */
+        .teoria-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .teoria-grid .box { background: #fafcff; border-radius: 20px; padding: 22px 24px; border: 1px solid #e2e8f0; }
+        .teoria-grid .box h3 { font-size: 17px; color: #0b2b4a; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+        .teoria-grid .box ul { padding-left: 20px; color: #1f3a5f; line-height: 1.7; }
+        .teoria-grid .box ul li { margin-bottom: 8px; }
+        .teoria-grid table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+        .teoria-grid table th { background: #e9eef5; color: #1a2b4a; padding: 10px 12px; text-align: left; border-bottom: 2px solid #d0d9e8; }
+        .teoria-grid table td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; }
+
+        /* DASHBOARD */
+        .input-panel {
+            background: #f8faff;
+            border-radius: 20px;
+            padding: 18px 24px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+        }
+        .input-panel .field { display: flex; flex-direction: column; flex: 1; min-width: 90px; }
+        .input-panel .field label { font-size: 10px; font-weight: 600; color: #5e6f8d; text-transform: uppercase; letter-spacing: 0.3px; }
+        .input-panel .field input { padding: 5px 8px; border: 1px solid #d0d9e8; border-radius: 10px; font-size: 13px; font-weight: 600; color: #0b2b4a; background: white; margin-top: 2px; width: 100%; }
+        .input-panel .field input:focus { border-color: #2a7de1; outline: none; box-shadow: 0 0 0 3px rgba(42,125,225,0.1); }
+        .input-panel select { padding: 5px 8px; border: 1px solid #d0d9e8; border-radius: 10px; font-size: 13px; font-weight: 600; background: white; }
+        .btn {
+            background: #0b2b4a;
+            color: white;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+        .btn:hover { background: #1a3f62; transform: scale(1.02); }
+        .btn i { margin-right: 6px; }
+        .btn-outline { background: transparent; color: #0b2b4a; border: 2px solid #0b2b4a; }
+        .btn-outline:hover { background: #0b2b4a; color: white; }
+        .btn-success { background: #27ae60; }
+        .btn-success:hover { background: #1e8449; }
+
+        .summary-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 14px;
+            margin-bottom: 22px;
+        }
+        .summary-card {
+            background: white;
+            border-radius: 16px;
+            padding: 14px 16px;
+            border: 1px solid #eef2f7;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+            text-align: center;
+        }
+        .summary-card .label { font-size: 11px; color: #7a8aa5; text-transform: uppercase; font-weight: 600; }
+        .summary-card .value { font-size: 26px; font-weight: 700; color: #0b2b4a; margin-top: 2px; }
+        .summary-card .sub { font-size: 12px; color: #5e6f8d; }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .kpi-card {
+            background: white;
+            border-radius: 18px;
+            padding: 16px 14px;
+            border: 1px solid #eef2f7;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        }
+        .kpi-card .title { font-size: 11px; font-weight: 600; color: #5e6f8d; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; }
+        .kpi-card .value { font-size: 26px; font-weight: 700; color: #0b2b4a; margin: 2px 0; }
+        .kpi-card .meta { font-size: 11px; color: #7a8aa5; }
+        .semaphore { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-left: 4px; }
+        .semaphore.green { background: #2ecc71; }
+        .semaphore.yellow { background: #f1c40f; }
+        .semaphore.red { background: #e74c3c; }
+
+        .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px; }
+        .chart-box { background: #fafcff; border-radius: 18px; padding: 16px 18px; border: 1px solid #e2e8f0; }
+        .chart-box h4 { font-size: 14px; color: #1a2b4a; margin-bottom: 12px; }
+        .bar-group { display: flex; flex-direction: column; gap: 6px; }
+        .bar-item { display: flex; align-items: center; gap: 8px; }
+        .bar-item .label { width: 70px; font-size: 12px; color: #2d4059; font-weight: 500; flex-shrink: 0; }
+        .bar-item .bar-bg { flex: 1; height: 20px; background: #e9eef5; border-radius: 30px; overflow: hidden; }
+        .bar-item .bar-fill { height: 100%; border-radius: 30px; transition: width 0.2s; width: 0%; }
+        .bar-item .bar-value { width: 70px; font-size: 12px; font-weight: 600; color: #0b2b4a; text-align: right; }
+        .mini-input { width: 60px; padding: 3px 6px; border: 1px solid #d0d9e8; border-radius: 8px; font-size: 12px; text-align: center; }
+
+        .kpi-detail-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+        .kpi-detail-table th {
+            background: #e9eef5;
+            color: #1a2b4a;
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 2px solid #d0d9e8;
+        }
+        .kpi-detail-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: middle;
+        }
+        .kpi-detail-table .util-text { font-size: 12px; color: #2d4059; max-width: 180px; }
+        .kpi-detail-table .calc-text { font-size: 12px; font-family: 'Courier New', monospace; background: #f0f4fb; padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
+
+        /* Mantenedor de metas - tabla */
+        .meta-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .meta-table th {
+            background: #e9eef5;
+            color: #1a2b4a;
+            padding: 12px 14px;
+            text-align: left;
+            border-bottom: 2px solid #d0d9e8;
+        }
+        .meta-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: middle;
+        }
+        .meta-table .just-text { font-size: 13px; color: #2d4059; }
+
+        /* MODALES */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(3px); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; }
+        .modal-box { background: white; max-width: 780px; width: 95%; max-height: 90vh; overflow-y: auto; padding: 30px 35px; border-radius: 28px; box-shadow: 0 30px 60px rgba(0,0,0,0.3); position: relative; }
+        .modal-box .close { position: absolute; top: 16px; right: 22px; font-size: 28px; cursor: pointer; color: #8a9bb8; }
+        .modal-box .close:hover { color: #0b2b4a; }
+        .modal-box h2 { font-size: 22px; color: #0b2b4a; margin-bottom: 20px; }
+        .form-group { margin-bottom: 14px; display: flex; flex-direction: column; }
+        .form-group label { font-weight: 600; font-size: 14px; color: #1a2b4a; margin-bottom: 4px; }
+        .form-group input, .form-group textarea { padding: 10px 14px; border: 1px solid #d0d9e8; border-radius: 12px; font-size: 14px; width: 100%; }
+        .btn-primary { background: #0b2b4a; color: white; border: none; padding: 10px 24px; border-radius: 40px; font-weight: 600; cursor: pointer; }
+        .btn-secondary { background: #e9eef5; color: #1a2b4a; border: none; padding: 10px 24px; border-radius: 40px; font-weight: 600; margin-right: 10px; cursor: pointer; }
+        .modal-footer { margin-top: 20px; display: flex; justify-content: flex-end; border-top: 1px solid #eef2f7; padding-top: 18px; }
+        .kpi-meta-editor { background: #f8faff; padding: 12px 16px; border-radius: 14px; border-left: 4px solid #2a7de1; margin-bottom: 10px; }
+        .kpi-meta-editor input { border: 1px solid #d0d9e8; border-radius: 8px; padding: 8px 12px; width: 120px; }
+        .kpi-meta-editor textarea { border: 1px solid #d0d9e8; border-radius: 8px; padding: 8px; width: 100%; }
+
+        @media (max-width: 768px) {
+            .chart-row { grid-template-columns: 1fr; }
+            .teoria-grid { grid-template-columns: 1fr; }
+            .container { padding: 16px; }
+            .input-panel { flex-direction: column; align-items: stretch; }
+            .kpi-detail-table { font-size: 11px; }
+            .kpi-detail-table th, .kpi-detail-table td { padding: 6px 8px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- HEADER -->
+    <div class="header">
+        <div>
+            <h1><i class="fas fa-ship"></i> Tablero de Control Logístico</h1>
+            <div class="sub">Peru Tech S.A.C. – Distribución Física Internacional</div>
+        </div>
+        <div class="period"><i class="far fa-calendar-alt"></i> Junio 2026 · Simulación dinámica</div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+        <button class="active" data-tab="tab1"><i class="fas fa-book"></i> Teoría & Análisis</button>
+        <button data-tab="tab2"><i class="fas fa-chart-pie"></i> Dashboard Simulador</button>
+        <button data-tab="tab3"><i class="fas fa-sliders-h"></i> Mantenedor de Metas</button>
+    </div>
+
+    <!-- ========== TAB 1: TEORÍA ========== -->
+    <div id="tab1" class="tab-content active">
+        <h2 style="font-size:20px; color:#0b2b4a; margin-bottom:16px;"><i class="fas fa-clipboard-list"></i> Fundamentos de la Decisión Logística</h2>
+        <div class="teoria-grid">
+            <div class="box">
+                <h3><i class="fas fa-check-circle"></i> Actividad 1: Selección del Transporte</h3>
+                <p><strong>Decisión:</strong> Transporte aéreo (Alternativa B). Es el único medio que cumple el plazo contractual de 15 días (5 días de tránsito vs. 18 días marítimos).</p>
+                <ul>
+                    <li><strong>Cumplimiento del plazo:</strong> Criterio excluyente. La vía marítima queda descartada.</li>
+                    <li><strong>Valor de la carga:</strong> US$ 4,000,000 → costo financiero por día en tránsito es relevante.</li>
+                    <li><strong>Riesgo de retraso:</strong> Muy bajo en aéreo, vital porque no hay margen.</li>
+                    <li><strong>Penalidades:</strong> Superan la diferencia de flete (US$ 75,000).</li>
+                </ul>
+                <table>
+                    <thead><tr><th>Concepto</th><th>Marítimo</th><th>Aéreo</th></tr></thead>
+                    <tbody>
+                        <tr><td>Tiempo tránsito</td><td>18 días</td><td>5 días</td></tr>
+                        <tr><td>Costo flete</td><td>US$ 45,000</td><td>US$ 120,000</td></tr>
+                        <tr><td>Costo inventario tránsito (12% anual)</td><td>US$ 23,671</td><td>US$ 6,575</td></tr>
+                        <tr><td><strong>Costo total logístico</strong></td><td>US$ 68,671</td><td>US$ 126,575</td></tr>
+                        <tr><td>Cumple plazo 15 días</td><td>❌ No (excede 3 días)</td><td>✅ Sí (10 días margen)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="box">
+                <h3><i class="fas fa-exclamation-triangle"></i> Actividad 2: Puntos Críticos DFI</h3>
+                <ul>
+                    <li><strong>1. Embalaje:</strong> Riesgo de daño en tránsito. Usar materiales específicos para transporte aéreo.</li>
+                    <li><strong>2. Aforo aduanero – Perú:</strong> Posible inspección física. Tener DAM, factura y origen completos.</li>
+                    <li><strong>3. Aduana importación – México (SAT):</strong> Retención por errores. Contar con agente aduanal certificado y validar fracción arancelaria.</li>
+                </ul>
+                <p style="margin-top:12px;"><strong>Ventajas del Aéreo:</strong> Cumple plazo, reduce exposición a robo/daño, libera capital rápido, menor inventario de seguridad.</p>
+                <p><strong>Desventajas:</strong> Flete 167% más alto, menor capacidad (podría requerir fraccionar), mayor costo unitario.</p>
+            </div>
+        </div>
+        <div style="margin-top:20px; background:#f8faff; border-radius:20px; padding:16px 20px; border:1px solid #e2e8f0;">
+            <h4 style="color:#0b2b4a;"><i class="fas fa-link"></i> Interrelación de KPIs (Actividad 5)</h4>
+            <ul style="padding-left:20px; color:#1f3a5f; line-height:1.7;">
+                <li><strong>Lead Time vs Costo Unitario:</strong> El aéreo reduce lead time a 5 días pero eleva el costo unitario a US$ 24, superando la meta de US$ 10 (presupuesto anual).</li>
+                <li><strong>OTIF y Entregas a Tiempo:</strong> Con aéreo se logra 100% de entregas a tiempo y OTIF perfecto, cumpliendo el nivel de servicio del 98%.</li>
+                <li><strong>Utilización de Flota:</strong> Mejora al consolidar envíos frecuentes, pero requiere gestión de capacidad.</li>
+                <li><strong>Plan de acción:</strong> Si Lead Time > 14 días, usar aéreo. Si Costo Unitario > US$ 12, negociar tarifas o consolidar cargas.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- ========== TAB 2: DASHBOARD SIMULADOR ========== -->
+    <div id="tab2" class="tab-content">
+        <!-- Panel de entrada con selector de alternativas -->
+        <div class="input-panel">
+            <div class="field" style="min-width:140px;">
+                <label>Alternativa</label>
+                <select id="altSelector" onchange="cargarAlternativa(this.value)">
+                    <option value="B" selected>Alternativa B (Aéreo)</option>
+                    <option value="C">Alternativa C (Prueba)</option>
+                    <option value="personalizada">-- Personalizada --</option>
+                </select>
+            </div>
+            <div class="field"><label>Total Pedidos</label><input type="number" id="totalOrders" value="5000" oninput="calcularDashboard()"></div>
+            <div class="field"><label>Entregados a Tiempo</label><input type="number" id="deliveredOnTime" value="5000" oninput="calcularDashboard()"></div>
+            <div class="field"><label>Pendientes</label><input type="number" id="pending" value="0" oninput="calcularDashboard()"></div>
+            <div class="field"><label>Devueltos</label><input type="number" id="returned" value="0" oninput="calcularDashboard()"></div>
+            <div class="field"><label>Costo Total (US$)</label><input type="number" id="totalCost" value="120000" oninput="calcularDashboard()"></div>
+            <div class="field"><label>Suma Días Entrega</label><input type="number" id="sumLeadDays" value="25000" oninput="calcularDashboard()"></div>
+            <div class="field"><label>Capacidad Máx. Flota</label><input type="number" id="fleetCapacity" value="6000" oninput="calcularDashboard()"></div>
+            <div>
+                <button class="btn btn-success" onclick="guardarAlternativa()"><i class="fas fa-save"></i> Guardar</button>
+                <button class="btn btn-outline" onclick="cargarDatosPrueba()"><i class="fas fa-flask"></i> Datos prueba</button>
+            </div>
+        </div>
+
+        <!-- Resumen -->
+        <div class="summary-row" id="summaryRow">
+            <div class="summary-card"><div class="label">📦 Total Pedidos</div><div class="value" id="sTotal">0</div></div>
+            <div class="summary-card"><div class="label">✅ Entregados a Tiempo</div><div class="value" id="sOnTime">0</div></div>
+            <div class="summary-card"><div class="label">💰 Costo Total (US$)</div><div class="value" id="sCost">0</div></div>
+            <div class="summary-card"><div class="label">⏱️ Lead Time Promedio</div><div class="value" id="sLead">0</div><div class="sub">días</div></div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="kpi-grid" id="kpiSimGrid"></div>
+
+        <!-- Gráficos -->
+        <div class="chart-row">
+            <div class="chart-box">
+                <h4><i class="fas fa-route"></i> Costo de Envío por Ruta (US$)</h4>
+                <div id="routeBars" class="bar-group"></div>
+                <div style="margin-top:10px; display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                    <span style="font-size:11px; color:#5e6f8d;">Editar:</span>
+                    <input type="number" id="rutaLima" value="120000" class="mini-input" oninput="calcularDashboard()">
+                    <input type="number" id="rutaCallao" value="0" class="mini-input" oninput="calcularDashboard()">
+                    <input type="number" id="rutaTrujillo" value="0" class="mini-input" oninput="calcularDashboard()">
+                    <input type="number" id="rutaArequipa" value="0" class="mini-input" oninput="calcularDashboard()">
+                    <input type="number" id="rutaIquitos" value="0" class="mini-input" oninput="calcularDashboard()">
+                </div>
+            </div>
+            <div class="chart-box">
+                <h4><i class="fas fa-truck"></i> Cantidad de Envíos por Transporte</h4>
+                <div id="transportBars" class="bar-group"></div>
+                <div style="margin-top:10px; display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                    <span style="font-size:11px; color:#5e6f8d;">Editar:</span>
+                    <input type="number" id="transTerrestre" value="0" class="mini-input" oninput="calcularDashboard()">
+                    <input type="number" id="transAereo" value="5000" class="mini-input" oninput="calcularDashboard()">
+                    <input type="number" id="transMaritimo" value="0" class="mini-input" oninput="calcularDashboard()">
+                </div>
+            </div>
+        </div>
+
+        <!-- TABLA DETALLE DE KPIs -->
+        <div style="background:#fafcff; border-radius:18px; padding:16px 20px; border:1px solid #e2e8f0; margin-top:10px;">
+            <h4 style="color:#0b2b4a; margin-bottom:12px;"><i class="fas fa-list-ul"></i> Detalle de Indicadores (cálculo actual)</h4>
+            <div class="table-wrap" style="overflow-x:auto;">
+                <table class="kpi-detail-table" id="kpiDetailTable">
+                    <thead>
+                        <tr>
+                            <th>Indicador</th>
+                            <th>Fórmula</th>
+                            <th>Unidad</th>
+                            <th>Meta</th>
+                            <th>Valor Actual</th>
+                            <th>Cálculo con valores actuales</th>
+                            <th>Utilidad para la Toma de Decisiones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="kpiDetailBody">
+                        <!-- Generado por JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== TAB 3: MANTENEDOR DE METAS ========== -->
+    <div id="tab3" class="tab-content">
+        <h2 style="font-size:18px; color:#0b2b4a; margin-bottom:16px;"><i class="fas fa-bullseye"></i> Mantenedor de Metas y Justificaciones</h2>
+        <button class="btn" onclick="openMetaEditor()"><i class="fas fa-pen"></i> Editar Metas y Justificaciones</button>
+        <div style="margin-top:20px; background:#fafcff; border-radius:20px; padding:16px 20px; border:1px solid #e2e8f0; overflow-x:auto;">
+            <table class="meta-table" id="metaDisplayTable">
+                <thead>
+                    <tr>
+                        <th>Indicador</th>
+                        <th>Meta</th>
+                        <th>Justificación</th>
+                    </tr>
+                </thead>
+                <tbody id="metaDisplayBody">
+                    <!-- Generado por JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL METAS ===== -->
+<div class="modal-overlay" id="metaModal">
+    <div class="modal-box">
+        <span class="close" onclick="closeModal('metaModal')">&times;</span>
+        <h2><i class="fas fa-bullseye"></i> Editar Metas y Justificaciones</h2>
+        <div id="metaFormContainer"></div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeModal('metaModal')">Cancelar</button>
+            <button class="btn-primary" onclick="saveMetas()">Guardar Metas</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL GUARDAR ALTERNATIVA ===== -->
+<div class="modal-overlay" id="saveAltModal">
+    <div class="modal-box">
+        <span class="close" onclick="closeModal('saveAltModal')">&times;</span>
+        <h2><i class="fas fa-save"></i> Guardar como Alternativa</h2>
+        <div class="form-group">
+            <label>Nombre de la alternativa</label>
+            <input type="text" id="newAltName" placeholder="Ej: Alternativa D - Mixta" value="Alternativa D">
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeModal('saveAltModal')">Cancelar</button>
+            <button class="btn-primary" onclick="confirmarGuardarAlternativa()">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ===================== DEFINICIONES =====================
+    const INDICATOR_KEYS = ['otif', 'leadtime', 'nivelServicio', 'utilizacionFlota', 'entregasTiempo', 'costoUnitario'];
+    const LABELS = { otif: 'OTIF', leadtime: 'Lead Time', nivelServicio: 'Nivel Servicio', utilizacionFlota: 'Utilización Flota', entregasTiempo: 'Entregas Tiempo', costoUnitario: 'Costo Unitario' };
+    const UNITS = { otif: '%', leadtime: 'días', nivelServicio: '%', utilizacionFlota: '%', entregasTiempo: '%', costoUnitario: 'US$' };
+    const ICONS = { otif: 'fa-check-circle', leadtime: 'fa-hourglass-half', nivelServicio: 'fa-star', utilizacionFlota: 'fa-truck', entregasTiempo: 'fa-clock', costoUnitario: 'fa-dollar-sign' };
+    const FORMULAS = {
+        otif: '(Pedidos perfectos / Total pedidos) × 100',
+        leadtime: 'Suma días entrega / Total pedidos',
+        nivelServicio: '(Pedidos sin incidencias / Total pedidos) × 100',
+        utilizacionFlota: '(Total pedidos / Capacidad) × 100',
+        entregasTiempo: '(Entregados a tiempo / Total pedidos) × 100',
+        costoUnitario: 'Costo total / Total pedidos'
+    };
+    const UTILIDADES = {
+        otif: 'Mide la efectividad global. Si baja, indica problemas en calidad, tiempos o documentación. Ayuda a decidir si se requiere mayor control en aduanas o embalaje.',
+        leadtime: 'Permite evaluar si se cumple el plazo máximo de 15 días. Si supera 14, se debe optar por aéreo o establecer un CD.',
+        nivelServicio: 'Refleja la calidad del servicio; si cae, se deben revisar procesos de almacenaje y manipulación.',
+        utilizacionFlota: 'Indica eficiencia de recursos; baja utilización sugiere consolidar envíos o reducir flota.',
+        entregasTiempo: 'Mide el cumplimiento del plazo; si es bajo, se debe priorizar el modo de transporte más rápido.',
+        costoUnitario: 'Clave para la rentabilidad. Compara con el presupuesto anual (US$ 1.2M → US$ 10 por unidad). Si supera la meta, se deben buscar reducciones de costo.'
+    };
+
+    // ===================== ESTADO (Alternativa A eliminada) =====================
+    let state = {
+        metas: { otif: 98, leadtime: 12, nivelServicio: 98, utilizacionFlota: 80, entregasTiempo: 95, costoUnitario: 10 },
+        justificaciones: {
+            otif: 'Se requiere 98% para cumplir con el nivel de servicio exigido por el cliente.',
+            leadtime: '≤ 12 días para garantizar un buffer del 20% frente al plazo máximo de 15 días.',
+            nivelServicio: '98% es el estándar mínimo para asegurar la satisfacción del cliente.',
+            utilizacionFlota: '80% es el punto de equilibrio para garantizar eficiencia sin saturar recursos.',
+            entregasTiempo: '95% asegura que la mayoría de pedidos cumplan el plazo.',
+            costoUnitario: 'US$ 10 derivado del presupuesto anual US$ 1.2M / 120,000 unidades.'
+        },
+        alternativas: {
+            B: {
+                nombre: 'Alternativa B (Aéreo)',
+                totalOrders: 5000,
+                deliveredOnTime: 5000,
+                pending: 0,
+                returned: 0,
+                totalCost: 120000,
+                sumLeadDays: 25000,
+                fleetCapacity: 6000,
+                rutas: { Lima: 120000, Callao: 0, Trujillo: 0, Arequipa: 0, Iquitos: 0 },
+                transportes: { Terrestre: 0, Aéreo: 5000, Marítimo: 0 }
+            },
+            C: {
+                nombre: 'Alternativa C (Prueba)',
+                totalOrders: 2500,
+                deliveredOnTime: 2375,
+                pending: 50,
+                returned: 75,
+                totalCost: 80000,
+                sumLeadDays: 20000,
+                fleetCapacity: 3000,
+                rutas: { Lima: 60000, Callao: 10000, Trujillo: 5000, Arequipa: 3000, Iquitos: 2000 },
+                transportes: { Terrestre: 1200, Aéreo: 800, Marítimo: 500 }
+            }
+        },
+        actualAlt: 'B'
+    };
+
+    // ===================== TABS =====================
+    document.querySelectorAll('.tabs button').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.getElementById(this.dataset.tab).classList.add('active');
+            if (this.dataset.tab === 'tab2') calcularDashboard();
+            if (this.dataset.tab === 'tab3') renderMetaDisplay();
+        });
+    });
+
+    // ===================== FUNCIONES DE CARGA Y GUARDADO =====================
+    function cargarAlternativa(key) {
+        if (key === 'personalizada') return;
+        const alt = state.alternativas[key];
+        if (!alt) return;
+        state.actualAlt = key;
+        document.getElementById('totalOrders').value = alt.totalOrders;
+        document.getElementById('deliveredOnTime').value = alt.deliveredOnTime;
+        document.getElementById('pending').value = alt.pending || 0;
+        document.getElementById('returned').value = alt.returned || 0;
+        document.getElementById('totalCost').value = alt.totalCost;
+        document.getElementById('sumLeadDays').value = alt.sumLeadDays;
+        document.getElementById('fleetCapacity').value = alt.fleetCapacity;
+        document.getElementById('rutaLima').value = alt.rutas.Lima || 0;
+        document.getElementById('rutaCallao').value = alt.rutas.Callao || 0;
+        document.getElementById('rutaTrujillo').value = alt.rutas.Trujillo || 0;
+        document.getElementById('rutaArequipa').value = alt.rutas.Arequipa || 0;
+        document.getElementById('rutaIquitos').value = alt.rutas.Iquitos || 0;
+        document.getElementById('transTerrestre').value = alt.transportes.Terrestre || 0;
+        document.getElementById('transAereo').value = alt.transportes.Aéreo || 0;
+        document.getElementById('transMaritimo').value = alt.transportes.Marítimo || 0;
+
+        const sel = document.getElementById('altSelector');
+        sel.value = key;
+        calcularDashboard();
+    }
+
+    function guardarAlternativa() {
+        document.getElementById('saveAltModal').classList.add('active');
+    }
+
+    function confirmarGuardarAlternativa() {
+        const nombre = document.getElementById('newAltName').value.trim() || 'Alternativa sin nombre';
+        const data = obtenerDatosActuales();
+        let key = 'D';
+        // Buscar una clave disponible
+        while (state.alternativas[key]) {
+            key = String.fromCharCode(key.charCodeAt(0) + 1);
+        }
+        state.alternativas[key] = {
+            nombre: nombre,
+            totalOrders: data.totalOrders,
+            deliveredOnTime: data.deliveredOnTime,
+            pending: data.pending,
+            returned: data.returned,
+            totalCost: data.totalCost,
+            sumLeadDays: data.sumLeadDays,
+            fleetCapacity: data.fleetCapacity,
+            rutas: data.rutas,
+            transportes: data.transportes
+        };
+        const sel = document.getElementById('altSelector');
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = nombre;
+        sel.appendChild(opt);
+        sel.value = key;
+        state.actualAlt = key;
+        closeModal('saveAltModal');
+        calcularDashboard();
+    }
+
+    function cargarDatosPrueba() {
+        const key = 'C';
+        if (state.alternativas[key]) {
+            cargarAlternativa(key);
+        } else {
+            // Fallback: crear datos de prueba si no existe
+            const prueba = {
+                nombre: 'Alternativa C (Prueba)',
+                totalOrders: 2500,
+                deliveredOnTime: 2375,
+                pending: 50,
+                returned: 75,
+                totalCost: 80000,
+                sumLeadDays: 20000,
+                fleetCapacity: 3000,
+                rutas: { Lima: 60000, Callao: 10000, Trujillo: 5000, Arequipa: 3000, Iquitos: 2000 },
+                transportes: { Terrestre: 1200, Aéreo: 800, Marítimo: 500 }
+            };
+            state.alternativas[key] = prueba;
+            const sel = document.getElementById('altSelector');
+            const opt = document.createElement('option');
+            opt.value = key;
+            opt.textContent = prueba.nombre;
+            sel.appendChild(opt);
+            cargarAlternativa(key);
+        }
+    }
+
+    function obtenerDatosActuales() {
+        return {
+            totalOrders: parseFloat(document.getElementById('totalOrders').value) || 0,
+            deliveredOnTime: parseFloat(document.getElementById('deliveredOnTime').value) || 0,
+            pending: parseFloat(document.getElementById('pending').value) || 0,
+            returned: parseFloat(document.getElementById('returned').value) || 0,
+            totalCost: parseFloat(document.getElementById('totalCost').value) || 0,
+            sumLeadDays: parseFloat(document.getElementById('sumLeadDays').value) || 0,
+            fleetCapacity: parseFloat(document.getElementById('fleetCapacity').value) || 1,
+            rutas: {
+                Lima: parseFloat(document.getElementById('rutaLima').value) || 0,
+                Callao: parseFloat(document.getElementById('rutaCallao').value) || 0,
+                Trujillo: parseFloat(document.getElementById('rutaTrujillo').value) || 0,
+                Arequipa: parseFloat(document.getElementById('rutaArequipa').value) || 0,
+                Iquitos: parseFloat(document.getElementById('rutaIquitos').value) || 0
+            },
+            transportes: {
+                Terrestre: parseFloat(document.getElementById('transTerrestre').value) || 0,
+                Aéreo: parseFloat(document.getElementById('transAereo').value) || 0,
+                Marítimo: parseFloat(document.getElementById('transMaritimo').value) || 0
+            }
+        };
+    }
+
+    // ===================== DASHBOARD =====================
+    function calcularDashboard() {
+        const data = obtenerDatosActuales();
+        const total = data.totalOrders;
+        const delivered = data.deliveredOnTime;
+        const pending = data.pending;
+        const returned = data.returned;
+        const totalCost = data.totalCost;
+        const sumDays = data.sumLeadDays;
+        const capacity = data.fleetCapacity;
+
+        // Resumen
+        document.getElementById('sTotal').textContent = total;
+        document.getElementById('sOnTime').textContent = delivered;
+        document.getElementById('sCost').textContent = totalCost.toLocaleString();
+        const avgLead = total > 0 ? (sumDays / total) : 0;
+        document.getElementById('sLead').textContent = avgLead.toFixed(1);
+
+        // Calcular KPIs
+        const entregasTiempo = total > 0 ? (delivered / total) * 100 : 0;
+        const otif = total > 0 ? ((delivered - returned) / total) * 100 : 0;
+        const nivelServicio = (delivered + returned) > 0 ? (delivered / (delivered + returned)) * 100 : 0;
+        const leadTime = avgLead;
+        const utilizacionFlota = (total / capacity) * 100;
+        const costoUnitario = total > 0 ? totalCost / total : 0;
+
+        const valores = { otif, leadtime: leadTime, nivelServicio, utilizacionFlota, entregasTiempo, costoUnitario };
+        const metas = state.metas;
+
+        // Renderizar KPIs
+        const grid = document.getElementById('kpiSimGrid');
+        grid.innerHTML = '';
+        INDICATOR_KEYS.forEach(id => {
+            const val = valores[id];
+            const meta = metas[id];
+            const unit = UNITS[id];
+            const esMenorMejor = (id === 'leadtime' || id === 'costoUnitario');
+            let semaforo, estado;
+            if (esMenorMejor) {
+                if (val <= meta) { semaforo = 'green'; estado = 'Cumple'; }
+                else if (val <= meta * 1.2) { semaforo = 'yellow'; estado = 'Alerta'; }
+                else { semaforo = 'red'; estado = 'Crítico'; }
+            } else {
+                if (val >= meta) { semaforo = 'green'; estado = 'Cumple'; }
+                else if (val >= meta * 0.9) { semaforo = 'yellow'; estado = 'Alerta'; }
+                else { semaforo = 'red'; estado = 'Crítico'; }
+            }
+            const card = document.createElement('div');
+            card.className = 'kpi-card';
+            card.innerHTML = `
+                <div class="title"><span><i class="fas ${ICONS[id]}"></i> ${LABELS[id]}</span><span class="semaphore ${semaforo}"></span></div>
+                <div class="value">${val.toFixed(1)}${unit !== '%' ? ' '+unit : '%'}</div>
+                <div class="meta">Meta: ${meta}${unit !== '%' ? ' '+unit : '%'} · ${estado}</div>
+            `;
+            grid.appendChild(card);
+        });
+
+        // Rutas
+        const rutas = data.rutas;
+        const maxRuta = Math.max(...Object.values(rutas), 1);
+        const routeContainer = document.getElementById('routeBars');
+        routeContainer.innerHTML = '';
+        Object.entries(rutas).forEach(([name, val]) => {
+            const pct = (val / maxRuta) * 100;
+            const div = document.createElement('div');
+            div.className = 'bar-item';
+            div.innerHTML = `<span class="label">${name}</span><div class="bar-bg"><div class="bar-fill" style="width:${pct}%; background:#2a7de1;"></div></div><span class="bar-value">US$ ${val.toLocaleString()}</span>`;
+            routeContainer.appendChild(div);
+        });
+
+        // Transporte
+        const trans = data.transportes;
+        const maxTrans = Math.max(...Object.values(trans), 1);
+        const transContainer = document.getElementById('transportBars');
+        transContainer.innerHTML = '';
+        Object.entries(trans).forEach(([name, val]) => {
+            const pct = (val / maxTrans) * 100;
+            const div = document.createElement('div');
+            div.className = 'bar-item';
+            div.innerHTML = `<span class="label">${name}</span><div class="bar-bg"><div class="bar-fill" style="width:${pct}%; background:#f39c12;"></div></div><span class="bar-value">${val}</span>`;
+            transContainer.appendChild(div);
+        });
+
+        // TABLA DETALLE KPI con reemplazo en fórmula
+        const tbody = document.getElementById('kpiDetailBody');
+        tbody.innerHTML = '';
+        
+        // Mapeo para el cálculo con valores actuales
+        const calcMap = {
+            otif: `(${delivered - returned} / ${total}) × 100`,
+            leadtime: `${sumDays} / ${total}`,
+            nivelServicio: `(${delivered} / ${delivered + returned}) × 100`,
+            utilizacionFlota: `(${total} / ${capacity}) × 100`,
+            entregasTiempo: `(${delivered} / ${total}) × 100`,
+            costoUnitario: `${totalCost} / ${total}`
+        };
+
+        INDICATOR_KEYS.forEach(id => {
+            const val = valores[id];
+            const meta = metas[id];
+            const unit = UNITS[id];
+            const calcStr = calcMap[id] || '';
+            const resultStr = `${val.toFixed(1)}${unit !== '%' ? ' '+unit : '%'}`;
+            
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${LABELS[id]}</strong></td>
+                <td>${FORMULAS[id]}</td>
+                <td>${unit}</td>
+                <td>${meta}${unit !== '%' ? ' '+unit : '%'}</td>
+                <td>${resultStr}</td>
+                <td class="calc-text">${calcStr} = ${resultStr}</td>
+                <td class="util-text">${UTILIDADES[id]}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // ===================== MANTENEDOR DE METAS (TABLA) =====================
+    function renderMetaDisplay() {
+        const tbody = document.getElementById('metaDisplayBody');
+        tbody.innerHTML = '';
+        INDICATOR_KEYS.forEach(id => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${LABELS[id]}</strong></td>
+                <td>${state.metas[id]} ${UNITS[id]}</td>
+                <td class="just-text">${state.justificaciones[id] || ''}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function openMetaEditor() {
+        const container = document.getElementById('metaFormContainer');
+        container.innerHTML = '';
+        INDICATOR_KEYS.forEach(id => {
+            const div = document.createElement('div');
+            div.className = 'kpi-meta-editor';
+            div.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <label style="font-weight:600;">${LABELS[id]} (${UNITS[id]})</label>
+                    <input type="number" id="meta_${id}" value="${state.metas[id]}" step="0.5">
+                </div>
+                <textarea id="just_${id}" rows="2" style="margin-top:6px;">${state.justificaciones[id] || ''}</textarea>
+            `;
+            container.appendChild(div);
+        });
+        document.getElementById('metaModal').classList.add('active');
+    }
+
+    function saveMetas() {
+        INDICATOR_KEYS.forEach(id => {
+            const inp = document.getElementById(`meta_${id}`);
+            const just = document.getElementById(`just_${id}`);
+            if (inp) state.metas[id] = parseFloat(inp.value) || 0;
+            if (just) state.justificaciones[id] = just.value;
+        });
+        closeModal('metaModal');
+        renderMetaDisplay();
+        calcularDashboard();
+    }
+
+    // ===== UTILIDADES =====
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+    document.querySelectorAll('.modal-overlay').forEach(el => {
+        el.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
+    });
+
+    // ===== INICIALIZAR =====
+    document.addEventListener('DOMContentLoaded', function() {
+        cargarAlternativa('B');
+        renderMetaDisplay();
+    });
+</script>
+</body>
+</html>
